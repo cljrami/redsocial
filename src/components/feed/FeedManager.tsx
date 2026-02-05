@@ -8,6 +8,7 @@ export default function FeedManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [postToView, setPostToView] = useState<any>(null);
   const [user, setUser] = useState({ id: 1, name: "Administrador" });
 
   const fetchPosts = async () => {
@@ -19,8 +20,19 @@ export default function FeedManager() {
     } catch (e) {
       console.error(e);
     } finally {
-      setTimeout(() => setLoading(false), 800);
+      setTimeout(() => setLoading(false), 600);
     }
+  };
+
+  // Función crítica: Abre el modal y le pasa el post seleccionado [cite: 2026-02-04]
+  const openComments = (post: any) => {
+    setPostToView(post);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setPostToView(null);
   };
 
   useEffect(() => {
@@ -30,36 +42,37 @@ export default function FeedManager() {
   }, []);
 
   return (
-    <>
+    <div className="max-w-[580px] mx-auto pt-6 px-4">
       <PostInputTrigger 
         onClick={() => setIsModalOpen(true)} 
         userName={user.name} 
       />
 
+      {/* El Modal que ahora recibe el postToView para mostrar comentarios [cite: 2026-02-04] */}
       <CreatePostModal 
         isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+        onClose={handleCloseModal} 
         onPostSuccess={fetchPosts}
         user={user}
+        postToView={postToView} 
       />
 
-      <div className="space-y-4 mt-4 pb-20">
+      <div className="space-y-4 mt-4 pb-10">
         {loading ? (
           <>
             <PostSkeleton />
             <PostSkeleton />
-            <PostSkeleton />
           </>
-        ) : posts.length > 0 ? (
-          posts.map((post) => (
-            <PostCard key={post.id} post={post} onOpenComments={() => {}} />
-          ))
         ) : (
-          <div className="bg-white dark:bg-[#242526] p-10 rounded-2xl border border-gray-100 dark:border-[#3E4042] shadow-sm text-center text-gray-500">
-            No hay publicaciones todavía.
-          </div>
+          posts.map((post) => (
+            <PostCard 
+              key={post.id} 
+              post={post} 
+              onOpenComments={() => openComments(post)} 
+            />
+          ))
         )}
       </div>
-    </>
+    </div>
   );
 }
