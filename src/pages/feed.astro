@@ -8,7 +8,7 @@ import FeedManager from "../components/feed/FeedManager";
   <Navbar client:load />
 
   <main
-    class="bg-[#F0F2F5] dark:bg-[#18191A] min-h-screen pt-14 transition-colors duration-300"
+    class="bg-[#F0F2F5] dark:bg-[#18191A] min-h-screen pt-14 transition-colors duration-300 font-sans"
   >
     <div
       class="max-w-[1250px] mx-auto mt-6 px-4 flex flex-col lg:flex-row gap-8"
@@ -23,13 +23,16 @@ import FeedManager from "../components/feed/FeedManager";
               class="flex items-center gap-4 p-2 hover:bg-gray-50 dark:hover:bg-[#3A3B3C] rounded-xl group transition-all"
             >
               <div
+                id="nav-avatar"
                 class="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-xl border-2 border-white dark:border-[#4E4F50] overflow-hidden"
               >
-                A
               </div>
               <div class="overflow-hidden">
-                <p class="font-bold text-gray-900 dark:text-white truncate">
-                  Administrador
+                <p
+                  id="nav-username"
+                  class="font-bold text-gray-900 dark:text-white truncate"
+                >
+                  Cargando...
                 </p>
                 <p
                   class="text-xs text-blue-600 font-bold group-hover:underline"
@@ -42,12 +45,12 @@ import FeedManager from "../components/feed/FeedManager";
 
           <nav class="space-y-1">
             <div
-              class="flex items-center gap-4 p-3 hover:bg-gray-200 dark:hover:bg-[#3A3B3C] rounded-xl cursor-pointer font-semibold dark:text-gray-200 transition-colors"
+              class="flex items-center gap-4 p-3 hover:bg-gray-200 dark:hover:bg-[#3A3B3C] rounded-xl cursor-pointer font-semibold dark:text-gray-200"
             >
               <span class="text-2xl">👥</span> Vecinos
             </div>
             <div
-              class="flex items-center gap-4 p-3 hover:bg-gray-200 dark:hover:bg-[#3A3B3C] rounded-xl cursor-pointer font-semibold dark:text-gray-200 transition-colors"
+              class="flex items-center gap-4 p-3 hover:bg-gray-200 dark:hover:bg-[#3A3B3C] rounded-xl cursor-pointer font-semibold dark:text-gray-200"
             >
               <span class="text-2xl">🛒</span> Marketplace
             </div>
@@ -62,7 +65,6 @@ import FeedManager from "../components/feed/FeedManager";
 
       <section class="flex-1 min-w-0 pb-20">
         <div class="max-w-[580px] mx-auto">
-          {/* Aquí solo va el FeedManager, sin ProfileHeader repetido */}
           <FeedManager client:load />
         </div>
       </section>
@@ -94,72 +96,31 @@ import FeedManager from "../components/feed/FeedManager";
             >
               Publicidad
             </h3>
-
-            <div class="space-y-5">
-              <div class="group cursor-pointer">
-                <div
-                  class="relative h-44 w-full rounded-2xl overflow-hidden mb-2 shadow-md border dark:border-[#3E4042]"
-                >
-                  <div
-                    class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"
-                  >
-                  </div>
-                  <img
-                    src="https://images.unsplash.com/photo-1557597774-9d2739f85a94?q=80&w=400"
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <div class="absolute bottom-3 left-3 z-20">
-                    <span
-                      class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold"
-                      >Sponsor</span
-                    >
-                    <p class="text-white font-bold text-md mt-1">
-                      S.I. Protection
-                    </p>
-                  </div>
-                </div>
-                <p
-                  class="text-[13px] text-gray-600 dark:text-gray-400 px-2 leading-relaxed"
-                >
-                  Protección profesional 24/7. Tu seguridad es nuestra
-                  prioridad.
-                </p>
-              </div>
-
-              <hr class="border-gray-200 dark:border-[#3E4042] mx-2" />
-
+            <div class="group cursor-pointer">
               <div
-                class="flex items-center gap-3 p-2 hover:bg-gray-200 dark:hover:bg-[#3A3B3C] rounded-xl transition-all cursor-pointer group"
+                class="relative h-44 w-full rounded-2xl overflow-hidden mb-2 shadow-md border dark:border-[#3E4042]"
               >
                 <div
-                  class="w-16 h-16 rounded-lg bg-orange-100 flex-shrink-0 overflow-hidden border dark:border-[#3E4042]"
+                  class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10"
                 >
-                  <img
-                    src="https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=150"
-                    class="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                  />
                 </div>
-                <div class="flex-1">
-                  <p class="font-bold text-[14px] dark:text-white truncate">
-                    Pizzería La Foresta
+                <img
+                  src="https://images.unsplash.com/photo-1557597774-9d2739f85a94?q=80&w=400"
+                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                />
+                <div class="absolute bottom-3 left-3 z-20">
+                  <span
+                    class="bg-blue-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold"
+                    >Sponsor</span
+                  >
+                  <p class="text-white font-bold text-md mt-1">
+                    S.I. Protection
                   </p>
-                  <p class="text-xs text-blue-600 font-semibold">Pedir ahora</p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div class="space-y-3 px-2">
-            <h3 class="text-gray-500 dark:text-gray-400 font-bold text-sm px-2">
-              Emergencias
-            </h3>
-            <div
-              class="flex items-center gap-3 p-3 bg-red-50 dark:bg-red-900/10 rounded-xl cursor-pointer hover:bg-red-100 transition-colors"
-            >
-              <span class="text-xl">🚑</span>
-              <span class="font-bold text-red-600 dark:text-red-400 text-sm"
-                >Ambulancia Directa</span
-              >
+              <p class="text-[13px] text-gray-600 dark:text-gray-400 px-2">
+                Seguridad avanzada para tu familia 24/7.
+              </p>
             </div>
           </div>
         </div>
@@ -167,3 +128,20 @@ import FeedManager from "../components/feed/FeedManager";
     </div>
   </main>
 </Layout>
+
+<script>
+  // Script para sincronizar el nombre del usuario en la barra lateral sin React [cite: 2026-02-04]
+  const syncNav = () => {
+    const session = JSON.parse(localStorage.getItem("user_session") || "{}");
+    const nameEl = document.getElementById("nav-username");
+    const avatarEl = document.getElementById("nav-avatar");
+    if (nameEl && session.name) nameEl.innerText = session.name;
+    if (avatarEl) {
+      avatarEl.innerHTML = session.profile_photo
+        ? `<img src="${session.profile_photo}" class="w-full h-full object-cover" />`
+        : `<span>${(session.name || "U")[0]}</span>`;
+    }
+  };
+  syncNav();
+  window.addEventListener("user_session_updated", syncNav);
+</script>
