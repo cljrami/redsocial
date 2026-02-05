@@ -1,0 +1,20 @@
+# domains/laforesta.zona8.cl/.htaccess
+RewriteEngine On
+
+# 1. Manejo de CORS para el Preflight
+<IfModule mod_headers.c>
+    # Esto permite que localhost:4321 hable con el servidor
+    Header set Access-Control-Allow-Origin "http://localhost:4321"
+    Header set Access-Control-Allow-Methods "POST, GET, OPTIONS, DELETE, PUT"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    Header set Access-Control-Allow-Credentials "true"
+</IfModule>
+
+# 2. Responder 200 OK a las peticiones OPTIONS (Indispensable para local)
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# 3. Reglas de redirección de tu API
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^api/(.*)$ api/$1 [L]

@@ -1,5 +1,5 @@
 {
-  "name": "redsocial",
+  "name": "redsocial_app",
   "type": "module",
   "version": "0.0.1",
   "scripts": {
@@ -9,6 +9,17 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^5.16.16"
+    "@astrojs/react": "^4.4.2",
+    "@tailwindcss/vite": "^4.1.18",
+    "astro": "^5.17.1",
+    "framer-motion": "^12.29.0",
+    "lucide-react": "^0.562.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwindcss": "^4.1.18"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.11",
+    "@types/react-dom": "^19.2.3"
   }
 }

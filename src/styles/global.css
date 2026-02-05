@@ -1,0 +1,22 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
+
+:root {
+  --forest-green: #7d9466;
+  --earth-brown: #8b5e3c;
+}
+
+body {
+  background-color: #ffffff !important; /* Blanco Puro */
+  font-family: 'Roboto', sans-serif;
+  @apply antialiased text-gray-900;
+}
+
+/* Tarjetas con sombras suaves para destacar sobre fondo blanco */
+.fb-card {
+  @apply bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-50;
+}
+
+.custom-scroll::-webkit-scrollbar { width: 5px; }
+.custom-scroll::-webkit-scrollbar-thumb { background: var(--forest-green); border-radius: 10px; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
