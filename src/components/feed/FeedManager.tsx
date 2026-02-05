@@ -31,7 +31,6 @@ export default function FeedManager() {
 
   return (
     <>
-      {/* CUADRO PARA PUBLICAR */}
       <PostInputTrigger 
         onClick={() => setIsModalOpen(true)} 
         userName={user.name} 
@@ -44,16 +43,22 @@ export default function FeedManager() {
         user={user}
       />
 
-      {/* LISTA DE PUBLICACIONES */}
-      <div className="space-y-4 mt-4">
+      <div className="space-y-4 mt-4 pb-20">
         {loading ? (
           <>
             <PostSkeleton />
             <PostSkeleton />
+            <PostSkeleton />
           </>
-        ) : posts.map((post) => (
-          <PostCard key={post.id} post={post} onOpenComments={() => {}} />
-        ))}
+        ) : posts.length > 0 ? (
+          posts.map((post) => (
+            <PostCard key={post.id} post={post} onOpenComments={() => {}} />
+          ))
+        ) : (
+          <div className="bg-white dark:bg-[#242526] p-10 rounded-2xl border border-gray-100 dark:border-[#3E4042] shadow-sm text-center text-gray-500">
+            No hay publicaciones todavía.
+          </div>
+        )}
       </div>
     </>
   );
