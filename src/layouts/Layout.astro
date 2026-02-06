@@ -1,7 +1,7 @@
 ---
-import '../styles/global.css';
+import "../styles/global.css";
 interface Props {
-	title: string;
+  title: string;
 }
 
 const { title } = Astro.props;
@@ -9,19 +9,16 @@ const { title } = Astro.props;
 
 <!doctype html>
 <html lang="es">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="description" content="Red Social La Foresta" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<title>{title}</title>
-	</head>
-	<body class="bg-[#F0F2F5]">
-		<nav class="bg-white shadow-sm sticky top-0 z-50 h-14 flex items-center px-4">
-			<div class="max-w-7xl mx-auto w-full flex justify-between items-center">
-				<h1 class="text-2xl font-bold text-blue-600">la foresta</h1>
-			</div>
-		</nav>
-		<slot />
-	</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Red Social La Foresta" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body class="bg-[#F0F2F5]">
+    <main>
+      <slot />
+    </main>
+  </body>
 </html>
