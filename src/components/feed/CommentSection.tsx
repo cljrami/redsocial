@@ -1,169 +1,158 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, MoreHorizontal, Trash2, X, Globe } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Send, Loader2, ThumbsUp, X } from 'lucide-react';
 
-export default function CommentSection({ postId }: { postId: number }) {
+export default function CommentSection({ postId, user }: { postId: number; user: any }) {
   const [comments, setComments] = useState<any[]>([]);
-  const [newComment, setNewComment] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState<{show: boolean, id: number | null}>({ show: false, id: null });
-  const [activeMenu, setActiveMenu] = useState<number | null>(null);
-  
-  const session = JSON.parse(localStorage.getItem("user_session") || "{}");
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [newComment, setNewComment] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: number; name: string } | null>(null);
 
   const fetchComments = async () => {
     try {
-      const res = await fetch(`/api/comments/get.php?post_id=${postId}`);
+      const res = await fetch(`/api/posts/get_comments.php?post_id=${postId}&user_id=${user.id}`);
       const data = await res.json();
-      if (Array.isArray(data)) setComments(data);
-    } catch (e) { console.error("Error al cargar comentarios:", e); }
+      setComments(Array.isArray(data) ? data : []);
+    } catch (e) { console.error("Error:", e); }
   };
 
-  useEffect(() => {
-    fetchComments();
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setActiveMenu(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [postId]);
+  useEffect(() => { fetchComments(); }, [postId]);
 
-  const handlePostComment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim() || isSending || !session.id) return;
-
-    setIsSending(true);
-
-    try {
-      // Sincronización: Enviamos JSON para que el PHP lo lea correctamente [cite: 2026-02-06]
-      const res = await fetch('/api/comments/save.php', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          post_id: postId,
-          user_id: session.id,
-          content: newComment.trim()
-        }) 
-      });
-      
-      const data = await res.json();
-      if (data.success) {
-        setNewComment('');
-        await fetchComments(); // Recarga la lista inmediatamente
-        window.dispatchEvent(new Event('user_session_updated'));
-      } else {
-        console.error("Error del servidor:", data.message);
-      }
-    } catch (e) { 
-      console.error("Error de red:", e); 
-    } finally {
-      setIsSending(false);
+  // --- FUNCIÓN PARA BORRAR CON POPUP ---
+  const handleDelete = async (commentId: number) => {
+    // El "Popup" de confirmación nativo (más seguro y rápido)
+    const confirmar = window.confirm("¿Estás seguro de que deseas ELIMINAR este comentario? Esta acción no se puede deshacer.");
+    
+    if (confirmar) {
+      try {
+        const res = await fetch(`/api/comments/delete.php?id=${commentId}&user_id=${user.id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          fetchComments(); // Recargar lista
+          window.dispatchEvent(new Event('user_session_updated')); // Actualizar contador global
+        }
+      } catch (e) { console.error("Error al borrar:", e); }
     }
   };
 
-  const handleDeleteComment = async () => {
-    if (!showDeleteModal.id) return;
+  const handleSend = async () => {
+    if (!newComment.trim() || loading) return;
+    setLoading(true);
     try {
-      const res = await fetch('/api/comments/delete.php', {
+      const res = await fetch('/api/comments/save.php', {
         method: 'POST',
-        body: new URLSearchParams({ 
-          'comment_id': showDeleteModal.id.toString(), 
-          'user_id': session.id 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          post_id: postId,
+          user_id: user.id,
+          content: newComment,
+          parent_id: replyingTo?.id || null // Enviamos el ID del padre si es respuesta
         })
       });
-      const data = await res.json();
-      if (data.success) {
-        setComments(prev => prev.filter(c => c.id !== showDeleteModal.id));
-        window.dispatchEvent(new Event('user_session_updated'));
+      if ((await res.json()).success) {
+        setNewComment("");
+        setReplyingTo(null); // Limpiar estado de respuesta
+        fetchComments();
       }
-    } catch (e) { console.error(e); }
-    setShowDeleteModal({ show: false, id: null });
+    } catch (e) { console.error(e); } finally { setLoading(false); }
   };
 
-  return (
-    <div className="flex flex-col h-full bg-white dark:bg-[#242526]">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {comments.map((comment) => (
-          <div key={comment.id} id={`comment-${comment.id}`} className="flex gap-2 group items-start">
-            <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-1 border dark:border-[#3E4042]">
-              <img src={comment.profile_photo || '/default-avatar.jpg'} className="w-full h-full object-cover" />
+  const renderComment = (c: any, isReply = false) => (
+    <div key={c.id} className={`${isReply ? 'ml-10 mt-2 border-l-2 border-blue-100 dark:border-[#3E4042] pl-3' : 'mt-4'} group animate-in fade-in duration-300`}>
+      <div className="flex gap-2">
+        <img src={c.profile_photo || '/default-avatar.jpg'} className={`${isReply ? 'w-6 h-6' : 'w-8 h-8'} rounded-full object-cover cursor-pointer`} />
+        
+        <div className="flex flex-col flex-1">
+          <div className="relative w-fit max-w-full">
+            <div className="bg-gray-100 dark:bg-[#3A3B3C] rounded-2xl px-3 py-1.5 shadow-sm">
+              <p className="text-[12px] font-bold dark:text-white cursor-pointer hover:underline">{c.full_name}</p>
+              <p className="text-[14px] dark:text-gray-200 leading-snug">{c.content}</p>
             </div>
             
-            <div className="flex flex-col max-w-[85%] relative">
-              <div className="bg-gray-100 dark:bg-[#3A3B3C] px-3 py-2 rounded-2xl">
-                <p className="text-[13px] font-bold dark:text-white leading-tight mb-0.5">{comment.full_name}</p>
-                <p className="text-[14px] dark:text-gray-200 leading-snug">{comment.content}</p>
-              </div>
-              <div className="flex gap-3 px-2 mt-1 text-[12px] font-bold text-gray-500 dark:text-gray-400">
-                <button className="hover:underline">Me gusta</button>
-                <span>Hace un momento</span>
-              </div>
-            </div>
-
-            {session.id === comment.user_id && (
-              <div className="relative self-center" ref={activeMenu === comment.id ? menuRef : null}>
-                <button 
-                  onClick={() => setActiveMenu(activeMenu === comment.id ? null : comment.id)}
-                  className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full text-gray-500 transition-all"
-                >
-                  <MoreHorizontal size={16} />
-                </button>
-
-                {activeMenu === comment.id && (
-                  <div className="absolute left-0 mt-1 w-40 bg-white dark:bg-[#242526] shadow-xl rounded-lg border dark:border-[#3E4042] py-1 z-50 animate-in zoom-in-95">
-                    <button 
-                      onClick={() => { setShowDeleteModal({ show: true, id: comment.id }); setActiveMenu(null); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] font-semibold text-xs transition-colors"
-                    >
-                      <Trash2 size={14} /> Eliminar
-                    </button>
-                  </div>
-                )}
+            {/* Contador de Likes a la derecha */}
+            {parseInt(c.likes_count) > 0 && (
+              <div className="absolute -right-3 -bottom-1 bg-white dark:bg-[#242526] shadow-md border dark:border-[#3E4042] rounded-full px-1 py-0.5 flex items-center gap-0.5 scale-90">
+                <div className="bg-blue-500 rounded-full p-0.5"><ThumbsUp size={8} className="text-white" fill="white" /></div>
+                <span className="text-[10px] font-bold dark:text-gray-300">{c.likes_count}</span>
               </div>
             )}
           </div>
-        ))}
-      </div>
 
-      <div className="p-4 border-t dark:border-[#3E4042] bg-white dark:bg-[#242526]">
-        <form onSubmit={handlePostComment} className="flex gap-2 items-center bg-gray-100 dark:bg-[#3A3B3C] rounded-full px-4 py-2">
-          <input 
-            type="text" 
-            placeholder="Escribe un comentario..." 
-            className="flex-1 bg-transparent outline-none text-[15px] dark:text-white"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-          />
-          <button type="submit" disabled={!newComment.trim() || isSending} className="text-blue-600 disabled:opacity-30">
-            <Send size={18} />
-          </button>
-        </form>
-      </div>
+          {/* BARRA DE ACCIONES */}
+          <div className="flex items-center gap-3 mt-1 ml-2 text-[11px] font-bold text-gray-500 dark:text-gray-400">
+            <button className="hover:underline cursor-pointer active:scale-95 transition-transform">Me gusta</button>
+            
+            {/* Al hacer clic en responder, activamos el popup sobre el input */}
+            <button 
+              onClick={() => setReplyingTo({ id: c.id, name: c.full_name })} 
+              className="hover:underline cursor-pointer"
+            >
+              Responder
+            </button>
+            
+            <span className="font-normal opacity-70">Hace un momento</span>
 
-      {showDeleteModal.show && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[4000] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-[#242526] w-full max-w-[500px] rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border dark:border-[#3E4042]">
-            <div className="p-4 border-b dark:border-[#3E4042] flex justify-between items-center relative">
-              <h3 className="text-xl font-bold dark:text-white w-full text-center">¿Eliminar comentario?</h3>
+            {/* BOTÓN BORRAR (TEXTO) */}
+            {(user.id == c.user_id || user.role === 'admin') && (
               <button 
-                onClick={() => setShowDeleteModal({ show: false, id: null })}
-                className="absolute right-4 p-1.5 bg-gray-100 dark:bg-[#3A3B3C] hover:bg-gray-200 dark:hover:bg-[#4E4F50] rounded-full text-gray-600 dark:text-gray-300 transition-colors"
+                onClick={() => handleDelete(c.id)}
+                className="text-red-500 hover:text-red-700 cursor-pointer uppercase text-[10px]"
               >
-                <X size={20} />
+                Borrar
               </button>
-            </div>
-            <div className="p-6 text-[15px] text-gray-600 dark:text-gray-300">
-              ¿Confirmas que quieres eliminar este comentario?
-            </div>
-            <div className="p-4 flex justify-end items-center gap-4">
-              <button onClick={() => setShowDeleteModal({ show: false, id: null })} className="text-blue-600 font-bold hover:underline px-2">No</button>
-              <button onClick={handleDeleteComment} className="bg-[#1877f2] hover:bg-[#166fe5] text-white px-8 py-2 rounded-lg font-bold shadow-md transition-all active:scale-95">Eliminar</button>
-            </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
+
+      {/* RENDERIZAR RESPUESTAS (HILOS) */}
+      {comments.filter(r => r.parent_id == c.id).map(r => renderComment(r, true))}
+    </div>
+  );
+
+  return (
+    <div className="mt-4 flex flex-col no-scrollbar">
+      {/* Lista de comentarios principales */}
+      <div className="max-h-80 overflow-y-auto no-scrollbar pr-1">
+        {comments.filter(c => !c.parent_id || c.parent_id == "0").map(c => renderComment(c))}
+      </div>
+
+      {/* ÁREA DE ESCRITURA */}
+      <div className="mt-4 pt-2 border-t dark:border-[#3E4042]">
+        
+        {/* POPUP DE "RESPONDIENDO A..." */}
+        {replyingTo && (
+          <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 mb-2 rounded-lg border border-blue-100 dark:border-blue-800 animate-in slide-in-from-bottom-1">
+            <span className="text-[11px] dark:text-blue-200">
+              Respondiendo a <span className="font-bold">@{replyingTo.name}</span>
+            </span>
+            <button 
+              onClick={() => setReplyingTo(null)} 
+              className="text-blue-500 hover:bg-blue-100 dark:hover:bg-blue-800 p-0.5 rounded-full cursor-pointer"
+            >
+              <X size={14}/>
+            </button>
+          </div>
+        )}
+
+        <div className="flex gap-2 items-center">
+          <img src={user.profile_photo || '/default-avatar.jpg'} className="w-8 h-8 rounded-full object-cover" />
+          <div className="flex-1 relative">
+            <input
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder={replyingTo ? `Escribe una respuesta...` : "Escribe un comentario..."}
+              className="w-full bg-gray-100 dark:bg-[#3A3B3C] dark:text-white rounded-full py-2 px-4 pr-10 text-sm border-none focus:ring-1 focus:ring-blue-500 transition-all"
+            />
+            <button 
+              onClick={handleSend} 
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#1877F2] hover:scale-110 transition-transform cursor-pointer"
+            >
+              {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

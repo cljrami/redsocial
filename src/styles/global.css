@@ -1,22 +1,75 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap');
 
+/* 1. BLOQUEO DE SCROLL DOBLE */
+/* Evita que el fondo se mueva cuando abres un modal */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body.modal-open {
+  overflow: hidden !important;
+  /* Evita el salto visual al ocultar la barra */
+  padding-right: 0px !important; 
+}
+
+/* 2. OCULTAR BARRAS DE SCROLL HORRIBLES */
+/* Mantiene la función de scroll pero sin ver la barra gris */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+/* 3. PUNTEROS DEL MOUSE (CURSORS) */
+/* Todo lo que sea clickeable DEBE mostrar la mano */
+button, 
+a, 
+input[type="button"], 
+input[type="submit"], 
+select,
+[role="button"],
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+/* Evitar puntero en elementos deshabilitados */
+button:disabled {
+  cursor: not-allowed !important;
+}
+
+/* 4. JERARQUÍA DE CAPAS (Z-INDEX) */
+/* Definimos niveles claros para que nada se solape mal */
 :root {
-  --forest-green: #7d9466;
-  --earth-brown: #8b5e3c;
+  --z-header: 100;
+  --z-modal-overlay: 9998;
+  --z-modal-content: 9999;
+  --z-mentions: 10000; /* Siempre arriba de todo */
 }
 
-body {
-  background-color: #ffffff !important; /* Blanco Puro */
-  font-family: 'Roboto', sans-serif;
-  @apply antialiased text-gray-900;
+/* 5. DISEÑO DE MENCIONES (POPUP) */
+/* Para que la ventanita de @ se vea moderna */
+.mention-suggestions {
+  position: fixed;
+  z-index: var(--z-mentions);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: 1px solid #ddd;
+  overflow: hidden;
 }
 
-/* Tarjetas con sombras suaves para destacar sobre fondo blanco */
-.fb-card {
-  @apply bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] border border-gray-50;
+.dark .mention-suggestions {
+  background: #242526;
+  border-color: #3e4042;
 }
 
-.custom-scroll::-webkit-scrollbar { width: 5px; }
-.custom-scroll::-webkit-scrollbar-thumb { background: var(--forest-green); border-radius: 10px; }
-.no-scrollbar::-webkit-scrollbar { display: none; }
+/* 6. CORRECCIÓN DE IMÁGENES */
+img {
+  user-select: none;
+  -webkit-user-drag: none;
+}

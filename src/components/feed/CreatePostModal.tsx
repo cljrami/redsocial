@@ -1,157 +1,87 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Image as ImageIcon, Users, Globe } from 'lucide-react';
+import { X, Users, Loader2 } from 'lucide-react';
 import CommentSection from './CommentSection';
+import MentionSuggestions from './MentionSuggestions';
 
 export default function CreatePostModal({ isOpen, onClose, onPostSuccess, user, postToView }: any) {
   const [content, setContent] = useState('');
-  const [image, setImage] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  
-  // NUEVOS ESTADOS: Para gestionar las sugerencias en el post [cite: 2026-02-05]
-  const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [suggestions, setSuggestions] = useState([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // EFECTO PARA BLOQUEAR SCROLL DEL BODY
   useEffect(() => {
-    if (!postToView) {
-      setContent(''); setImage(null); setPreview(null);
-      setShowSuggestions(false);
-    }
-  }, [isOpen, postToView]);
+    if (isOpen) document.body.classList.add('modal-open');
+    else document.body.classList.remove('modal-open');
+    return () => document.body.classList.remove('modal-open');
+  }, [isOpen]);
 
-  // MANEJADOR DE TEXTO: Detecta el @ mientras escribes el post [cite: 2026-02-05]
-  const handleContentChange = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setContent(value);
-
-    const atIndex = value.lastIndexOf('@');
-    // Si hay un @ y no hay un espacio inmediatamente después [cite: 2026-02-05]
-    if (atIndex !== -1 && (atIndex === 0 || value[atIndex - 1] === ' ')) {
-      const query = value.substring(atIndex + 1).split(/\s/)[0];
-      if (query.length >= 2) {
-        try {
-          const res = await fetch(`/api/users/search.php?q=${query}`);
-          const data = await res.json();
-          setSuggestions(data);
-          setShowSuggestions(true);
-        } catch (err) { console.error(err); }
-      } else { setShowSuggestions(false); }
-    } else { setShowSuggestions(false); }
-  };
-
-  const selectUser = (name: string) => {
-    const atIndex = content.lastIndexOf('@');
-    const baseText = content.substring(0, atIndex);
-    setContent(baseText + '@' + name + ' '); // Inserta el nombre seleccionado [cite: 2026-02-05]
-    setShowSuggestions(false);
+  const handleText = async (e: any) => {
+    const val = e.target.value; setContent(val);
+    const cursor = e.target.selectionStart;
+    const lastAt = val.substring(0, cursor).lastIndexOf('@');
+    
+    if (lastAt !== -1 && !val.substring(lastAt, cursor).includes(' ')) {
+      const rect = textareaRef.current?.getBoundingClientRect();
+      // POSICIÓN ABSOLUTA PARA QUE NO DESPLACE EL CONTENIDO
+      setMentionPosition({ top: (rect?.top || 0) + 40, left: (rect?.left || 0) + 20 });
+      
+      const q = val.substring(lastAt + 1, cursor);
+      if (q.length > 0) {
+        const res = await fetch(`/api/users/search.php?q=${q}`);
+        const data = await res.json();
+        setSuggestions(data);
+        setShowSuggestions(data.length > 0);
+      } else setShowSuggestions(false);
+    } else setShowSuggestions(false);
   };
 
   if (!isOpen) return null;
-  const isViewing = !!postToView;
-
-  const handlePost = async () => {
-    if (!content.trim() && !image) return;
-    if (!user.id || user.id === 0) { alert("Sesión no válida"); return; }
-
-    setLoading(true);
-    const formData = new FormData();
-    formData.append('content', content);
-    formData.append('user_id', user.id.toString()); 
-    if (image) formData.append('image', image);
-
-    try {
-      const res = await fetch("/api/posts/save.php", { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.success) {
-        await onPostSuccess();
-        onClose();
-      }
-    } catch (error) { console.error(error); } finally { setLoading(false); }
-  };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-white/90 dark:bg-[#1c1c1d]/90 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#242526] w-full max-w-[600px] rounded-2xl shadow-2xl border dark:border-[#3E4042] flex flex-col overflow-hidden max-h-[90vh] relative">
-        
-        {/* MENÚ DE SUGERENCIAS FLOTANTE (Para el Post) [cite: 2026-02-05] */}
-        {showSuggestions && suggestions.length > 0 && !isViewing && (
-          <div className="absolute top-[180px] left-6 w-72 bg-white dark:bg-[#242526] shadow-2xl rounded-xl border dark:border-[#3E4042] py-2 z-[120] animate-in zoom-in-95">
-            <p className="px-4 py-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Mencionar a:</p>
-            {suggestions.map((s) => (
-              <button 
-                key={s.id} 
-                onClick={() => selectUser(s.full_name)}
-                className="w-full flex items-center gap-3 px-4 py-2 hover:bg-blue-50 dark:hover:bg-[#3A3B3C] text-left transition-colors"
-              >
-                <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold overflow-hidden border">
-                  {s.profile_photo ? <img src={s.profile_photo} className="w-full h-full object-cover" /> : s.full_name[0]}
-                </div>
-                <span className="text-sm font-bold dark:text-white">{s.full_name}</span>
-              </button>
-            ))}
-          </div>
-        )}
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 no-scrollbar">
+      
+      {/* VENTANA DE MENCIONES CON POSICIÓN FIXED Y Z-INDEX MÁXIMO */}
+      {showSuggestions && (
+        <div className="fixed z-[10000]" style={{ top: mentionPosition.top, left: mentionPosition.left }}>
+          <MentionSuggestions users={suggestions} onSelect={(u: any) => {
+             const lastAt = content.lastIndexOf('@');
+             setContent(content.substring(0, lastAt) + '@' + u.full_name + ' ');
+             setShowSuggestions(false);
+             textareaRef.current?.focus();
+          }} />
+        </div>
+      )}
 
-        <div className="p-4 border-b dark:border-[#3E4042] flex justify-between items-center relative">
-          <h2 className="text-xl font-bold w-full text-center dark:text-white">
-            {isViewing ? 'Publicación' : 'Crear publicación'}
-          </h2>
-          <button onClick={onClose} className="absolute right-4 top-3.5 p-1.5 bg-gray-100 dark:bg-[#3A3B3C] rounded-full dark:text-white transition-colors">
-            <X size={20} />
-          </button>
+      <div className="bg-white dark:bg-[#242526] w-full max-w-[550px] rounded-xl shadow-2xl flex flex-col overflow-hidden max-h-[95vh] border dark:border-[#3E4042]">
+        <div className="p-4 border-b dark:border-[#3E4042] flex justify-between items-center bg-white dark:bg-[#242526] z-10">
+          <h2 className="text-center w-full font-bold text-xl dark:text-white">{postToView ? 'Publicación' : 'Crear publicación'}</h2>
+          <button onClick={onClose} className="p-1.5 bg-gray-100 dark:bg-[#3A3B3C] rounded-full dark:text-white cursor-pointer hover:bg-gray-200"><X size={20}/></button>
         </div>
 
-        <div className="p-4 overflow-y-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold overflow-hidden border">
-              {(isViewing ? postToView.profile_photo : user.profile_photo) ? (
-                <img src={isViewing ? postToView.profile_photo : user.profile_photo} className="w-full h-full object-cover" />
-              ) : (isViewing ? postToView.full_name : user.name)?.[0]}
-            </div>
+        <div className="p-4 overflow-y-auto no-scrollbar">
+          {/* Cabecera de usuario clicable */}
+          <div className="flex items-center gap-3 mb-4 cursor-pointer">
+            <img src={(postToView?.profile_photo || user.profile_photo) || '/default-avatar.jpg'} className="w-10 h-10 rounded-full object-cover border" />
             <div>
-              <p className="font-semibold dark:text-white">{isViewing ? postToView.full_name : user.name}</p>
-              <div className="flex items-center gap-1 bg-gray-100 dark:bg-[#3A3B3C] px-2 py-0.5 rounded text-[12px] font-bold dark:text-gray-300">
-                <Users size={12} /> Amigos
-              </div>
+              <p className="font-bold dark:text-white hover:underline">{postToView?.full_name || user.name}</p>
+              <span className="flex items-center gap-1 text-xs font-bold bg-gray-100 dark:bg-[#3A3B3C] px-2 py-0.5 rounded w-fit dark:text-gray-300"><Users size={12}/> Amigos</span>
             </div>
           </div>
 
-          {isViewing ? (
+          {postToView ? (
             <div className="space-y-4">
-              <p className="text-gray-800 dark:text-gray-200 text-lg leading-normal">{postToView.content}</p>
-              {postToView.image_url && <img src={postToView.image_url} className="w-full rounded-xl border dark:border-[#3E4042]" />}
-              <div className="mt-6 border-t dark:border-[#3E4042] pt-4"><CommentSection postId={postToView.id} user={user} /></div>
+              <p className="dark:text-white text-lg leading-snug">{postToView.content}</p>
+              {postToView.image_url && <img src={postToView.image_url} className="w-full rounded-lg border dark:border-[#3E4042]" />}
+              <div className="border-t dark:border-[#3E4042] pt-2">
+                <CommentSection postId={postToView.id} user={user} />
+              </div>
             </div>
           ) : (
             <>
-              <textarea 
-                autoFocus
-                className="w-full text-lg border-none focus:ring-0 min-h-[150px] resize-none dark:bg-transparent dark:text-white"
-                placeholder={`¿Qué estás pensando, ${user.name}?`}
-                value={content}
-                onChange={handleContentChange} // Activamos la detección de menciones [cite: 2026-02-05]
-              />
-              {preview && (
-                <div className="relative mb-4">
-                  <img src={preview} className="w-full h-48 object-cover rounded-xl border dark:border-[#3E4042]" />
-                  <button onClick={() => {setImage(null); setPreview(null);}} className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full"><X size={16}/></button>
-                </div>
-              )}
-              <div className="border dark:border-[#3E4042] rounded-xl p-3 flex justify-between items-center mb-4">
-                <span className="font-bold dark:text-white">Agregar a tu publicación</span>
-                <button onClick={() => fileInputRef.current?.click()} className="text-green-500 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] p-2 rounded-full">
-                  <ImageIcon size={24}/>
-                  <input type="file" hidden ref={fileInputRef} onChange={(e:any) => {
-                    const f = e.target.files?.[0];
-                    if(f){ setImage(f); setPreview(URL.createObjectURL(f)); }
-                  }} />
-                </button>
-              </div>
-              <button onClick={handlePost} disabled={loading || (!content.trim() && !image)} className="w-full py-2.5 bg-[#1877F2] text-white font-bold rounded-lg disabled:bg-gray-200">
-                {loading ? 'Publicando...' : 'Publicar'}
-              </button>
+              <textarea ref={textareaRef} value={content} onChange={handleText} placeholder={`¿Qué piensas, ${user.name}?`} className="w-full min-h-[150px] border-none focus:ring-0 text-lg dark:bg-transparent dark:text-white resize-none no-scrollbar" />
+              <button className="w-full py-2.5 bg-[#1877F2] text-white font-bold rounded-lg mt-4 cursor-pointer hover:bg-blue-600 transition-colors">Publicar</button>
             </>
           )}
         </div>
