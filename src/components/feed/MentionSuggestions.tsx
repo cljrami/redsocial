@@ -1,37 +1,31 @@
 import React from 'react';
 
 export default function MentionSuggestions({ users, onSelect, position }: any) {
-  if (!users || users.length === 0) return null;
+  if (users.length === 0) return null;
 
   return (
     <div 
-      className="fixed z-[9999] bg-white dark:bg-[#242526] shadow-2xl rounded-xl border dark:border-[#3E4042] w-64 overflow-hidden animate-in zoom-in-95 duration-100"
-      style={{ 
-        top: position.top, 
-        left: position.left 
-      }}
+      className="fixed z-[10001] bg-white dark:bg-[#242526] shadow-2xl rounded-lg border dark:border-[#3E4042] overflow-hidden w-64 animate-in fade-in zoom-in duration-100"
+      style={{ top: position.top, left: position.left }}
     >
-      <div className="px-4 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b dark:border-[#3E4042]">
-        Mencionar vecino
+      <div className="p-2 text-xs font-bold text-gray-500 border-b dark:border-[#3E4042] dark:text-gray-400">
+        SUGERENCIAS
       </div>
-      <div className="max-h-48 overflow-y-auto">
+      <ul className="max-h-48 overflow-y-auto no-scrollbar">
         {users.map((u: any) => (
-          <button 
+          <li 
             key={u.id} 
             onClick={() => onSelect(u)}
-            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-[#3A3B3C] text-left transition-colors group"
+            className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] cursor-pointer transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center text-white font-bold overflow-hidden">
-              {u.profile_photo ? (
-                <img src={u.profile_photo} className="w-full h-full object-cover" alt="" />
-              ) : (u.full_name?.[0] || '?')}
+            <img src={u.profile_photo || '/default-avatar.jpg'} className="w-8 h-8 rounded-full object-cover" alt="" />
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold dark:text-white">{u.full_name}</span>
+              <span className="text-[10px] text-gray-500 uppercase">{u.role}</span>
             </div>
-            <span className="text-sm font-bold dark:text-white group-hover:text-[#1877F2]">
-              {u.full_name}
-            </span>
-          </button>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
