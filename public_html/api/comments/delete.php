@@ -1,11 +1,29 @@
 <?php
 // api/comments/delete.php
+header('Content-Type: application/json');
 include_once '../config/db.php';
+
+if (!isset($_GET['id']) || !isset($_GET['user_id'])) {
+    echo json_encode(["success" => false, "error" => "Faltan parámetros"]);
+    exit;
+}
+
 $id = $_GET['id'];
 $user_id = $_GET['user_id'];
 
-// Borramos el comentario (y sus respuestas si tu DB tiene ON DELETE CASCADE)
-$stmt = $pdo->prepare("DELETE FROM comments WHERE id = ? AND (user_id = ? OR (SELECT role FROM users WHERE id = ?) = 'admin')");
-$success = $stmt->execute([$id, $user_id, $user_id]);
+try {
+    // Eliminamos el comentario solo si el user_id coincide con el dueño
+    // También eliminamos las respuestas que tengan este ID como padre
+    $stmt = $pdo->prepare("
+        DELETE FROM comments 
+        WHERE (id = ? OR parent_id = ?) 
+        AND user_id = ?
+    ");
 
-echo json_encode(["success" => $success]);
+    // Pasamos el ID del comentario, el ID para las respuestas y el ID del usuario
+    $success = $stmt->execute([$id, $id, $user_id]);
+
+    echo json_encode(["success" => $success]);
+} catch (PDOException $e) {
+    echo json_encode(["success" => false, "error" => $e->getMessage()]);
+}

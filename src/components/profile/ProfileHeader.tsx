@@ -71,14 +71,12 @@ export default function ProfileHeader() {
         localStorage.setItem("user_session", JSON.stringify(session));
 
         // --- PUBLICACIÓN AUTOMÁTICA ---
-        const postMsg = type === 'profile' 
-          ? "actualizó su foto de perfil." 
-          : "actualizó su foto de portada.";
-
         const postData = new FormData();
         postData.append('user_id', userData.id);
-        postData.append('content', postMsg);
+        // El contenido se envía pero el PostCard lo ignorará para el renderizado visual (usará el post_type)
+        postData.append('content', type === 'profile' ? "actualizó su foto de perfil." : "actualizó su foto de portada.");
         postData.append('image_url', data.url); 
+        postData.append('post_type', type === 'profile' ? 'profile_photo' : 'cover_photo');
 
         await fetch('/api/posts/save.php', { method: 'POST', body: postData });
 
